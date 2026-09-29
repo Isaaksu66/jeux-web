@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ragdoll Launcher - Launch, Bounce, Fly!</title>
+    <meta name="description" content="Launch your ragdoll as far as possible! Bounce off trampolines, collect coins, and upgrade your launcher in this addictive physics game.">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    
+    <!-- MENU PRINCIPAL -->
+    <div id="menu-screen" class="screen">
+        <div class="menu-content">
+            <h1 id="game-title">RAGDOLL<br>LAUNCHER</h1>
+            <p class="tagline">How far can you fly?</p>
+            <button id="play-btn" class="btn btn-play">🚀 LAUNCH!</button>
+        </div>
+    </div>
+
+    <!-- HUD EN JEU -->
+    <div id="hud" class="hidden">
+        <div id="distance-display">0 m</div>
+        <div id="coins-display">🪙 0</div>
+        <div id="height-display">↑ 0 m</div>
+    </div>
+
+    <!-- JAUGE DE PUISSANCE -->
+    <div id="power-bar-container" class="hidden">
+        <div id="power-label">POWER</div>
+        <div id="power-bar-bg">
+            <div id="power-bar-fill"></div>
+        </div>
+        <p id="power-instruction">Hold SPACE or TAP to charge, release to LAUNCH!</p>
+    </div>
+
+    <!-- ANGLE INDICATOR -->
+    <div id="angle-indicator" class="hidden">
+        <div id="angle-label">ANGLE: <span id="angle-value">45</span>°</div>
+        <p id="angle-instruction">Use ↑↓ arrows to adjust angle</p>
+    </div>
+
+    <!-- ECRAN DE RESULTAT -->
+    <div id="result-screen" class="screen hidden">
+        <div class="result-content">
+            <h2 id="result-title">NICE FLIGHT!</h2>
+            <div class="result-stats">
+                <div class="stat">
+                    <span class="stat-label">Distance</span>
+                    <span class="stat-value" id="result-distance">0 m</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Max Height</span>
+                    <span class="stat-value" id="result-height">0 m</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Coins</span>
+                    <span class="stat-value" id="result-coins">0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Best</span>
+                    <span class="stat-value" id="result-best">0 m</span>
+                </div>
+            </div>
+            <button id="retry-btn" class="btn btn-play">🔄 RETRY</button>
+        </div>
+    </div>
+
+    <script src="js/game.js"></script>
+</body>
+</html>

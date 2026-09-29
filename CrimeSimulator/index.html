@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crime Simulator - Shadow Heist 3D</title>
+    <meta name="description" content="Pay back your prison debts by executing high-stakes 3D stealth heists. Avoid guards, bypass security, and crack safes.">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css?v=3.6">
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <!-- 1. HIDEOUT HUD (MAIN MENU & EMPIRE MANAGEMENT) -->
+    <div id="hideout-screen" class="screen">
+        <div class="glow-bg"></div>
+        <div class="sidebar">
+            <h1 class="logo">SHADOW<br>HEIST</h1>
+            <p class="tagline">CRIME SIMULATOR v3.0</p>
+            
+            <button id="black-market-tab" class="btn-menu active">🛒 BLACK MARKET</button>
+            <button id="contracts-tab" class="btn-menu">💼 CONTRACTS</button>
+            <button id="dismantle-tab" class="btn-menu">🔧 DISMANTLE STATION</button>
+
+            <div class="debt-box" style="margin-top: 20px;">
+                <div class="label">PRISON DEBT</div>
+                <div id="debt-value" class="value text-red">$25,000</div>
+                <div class="progress-bar-bg">
+                    <div id="debt-progress" class="progress-bar-fill bg-red" style="width: 100%;"></div>
+                </div>
+            </div>
+
+            <div class="heat-box" style="margin-bottom: 14px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px;">
+                <div class="label">RECHERCHE PERMANENTE</div>
+                <div id="heat-value" class="value text-red">0%</div>
+                <div class="progress-bar-bg">
+                    <div id="heat-progress" class="progress-bar-fill bg-red" style="width: 0%;"></div>
+                </div>
+            </div>
+
+            <div class="settings-box" style="margin-bottom: 14px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px;">
+                <div class="label">SENSIBILITÉ SOURIS</div>
+                <input type="range" id="mouse-sensitivity" min="0.0001" max="0.0020" step="0.0001" value="0.0006" style="width: 100%; cursor: pointer; accent-color: var(--neon-blue);">
+                <div id="sensitivity-value" style="font-size: 11px; color: var(--text-muted); text-align: right; margin-top: 5px; font-weight: bold; font-family: 'Share Tech Mono', monospace;">0.0006</div>
+            </div>
+
+            <div class="cash-box">
+                <div class="label">CLEAN CASH</div>
+                <div id="clean-cash" class="value text-green">$500</div>
+                <div class="label" style="margin-top: 10px;">DIRTY CASH</div>
+                <div id="dirty-cash" class="value text-yellow">$0</div>
+                <button id="launder-btn" class="btn-secondary" style="margin-top: 10px; width: 100%;">💸 LAUNDER CASH (15% Fee)</button>
+            </div>
+        </div>
+
+        <div class="main-panel">
+            <!-- BLACK MARKET SECTION -->
+            <div id="black-market-section" class="panel-section">
+                <h2>BLACK MARKET SHOP</h2>
+                <p class="section-desc">Buy tools and permanent upgrades to bypass high-end security. All sales are final.</p>
+                <div class="shop-grid">
+                    <div class="shop-item" data-item="lockpick" data-price="200">
+                        <div class="item-name">🔐 Professional Lockpicks</div>
+                        <div class="item-desc">Required to crack doors quietly. (Single Use)</div>
+                        <button class="buy-btn btn-action">Buy for $200</button>
+                    </div>
+                    <div class="shop-item" data-item="titanium" data-price="400">
+                        <div class="item-name">🛡️ Titanium Lockpick</div>
+                        <div class="item-desc">High durability lockpick. Tolerates 5 mistakes. (Single Use)</div>
+                        <button class="buy-btn btn-action">Buy for $400</button>
+                    </div>
+                    <div class="shop-item" data-item="iem" data-price="1200">
+                        <div class="item-name">⚡ Pistolet IEM (EMP)</div>
+                        <div class="item-desc">Disable a camera or laser beam at a distance for 45s. (Single Use)</div>
+                        <button class="buy-btn btn-action">Buy for $1,200</button>
+                    </div>
+                    <div class="shop-item" data-item="gas" data-price="400">
+                        <div class="item-name">💨 Sleeping Gas Grenade</div>
+                        <div class="item-desc">Knocks out guard or dog in area. (Single Use)</div>
+                        <button class="buy-btn btn-action">Buy for $400</button>
+                    </div>
+                    <div class="shop-item" data-item="crowbar" data-price="150">
+                        <div class="item-name">🔨 Heavy Crowbar</div>
+                        <div class="item-desc">Forces doors open instantly, but alerts nearby guards. (Reusable)</div>
+                        <button class="buy-btn btn-action">Buy for $150</button>
+                    </div>
+                    <div class="shop-item" data-item="boots" data-price="300">
+                        <div class="item-name">🥾 Felt-Sole Boots</div>
+                        <div class="item-desc">Walk silently on glass and reduce step noise by 50%. (Permanent)</div>
+                        <button class="buy-btn btn-action">Buy for $300</button>
+                    </div>
+                    <div class="shop-item" data-item="gloves" data-price="250">
+                        <div class="item-name">🧤 Gants Furtifs</div>
+                        <div class="item-desc">Evite le dépôt d'empreintes digitales sur les dossiers/coffres. (Permanent)</div>
+                        <button class="buy-btn btn-action">Buy for $250</button>
+                    </div>
+                    <div class="shop-item" data-item="nvg" data-price="800">
+                        <div class="item-name">🥽 Vision Nocturne (N)</div>
+                        <div class="item-desc">Activez l'amplification de lumière verte en mission avec la touche N. (Permanent)</div>
+                        <button class="buy-btn btn-action">Buy for $800</button>
+                    </div>
+                    <div class="shop-item" data-item="server" data-price="1500">
+                        <div class="item-name">🖥️ Serveur Darknet Dédié</div>
+                        <div class="item-desc">Réduit définitivement les frais de blanchiment à 5% au lieu de 15%. (Permanent)</div>
+                        <button class="buy-btn btn-action">Buy for $1,500</button>
+                    </div>
+                    <div class="shop-item" data-item="chassis" data-price="1000">
+                        <div class="item-name">🛡️ Châssis Renforcé du Van</div>
+                        <div class="item-desc">Renforce le van de fuite en lui octroyant 150 PV (au lieu de 100 PV). (Permanent)</div>
+                        <button class="buy-btn btn-action">Buy for $1,000</button>
+                    </div>
+                    <div class="shop-item" data-item="v8" data-price="1200">
+                        <div class="item-name">🚀 Moteur V8 Turbo</div>
+                        <div class="item-desc">Permet une accélération 40% plus rapide pendant la course-poursuite. (Permanent)</div>
+                        <button class="buy-btn btn-action">Buy for $1,200</button>
+                    </div>
+                    <div class="shop-item" data-item="radar" data-price="600">
+                        <div class="item-name">🛰️ Radar de Proximité</div>
+                        <div class="item-desc">Affiche la distance au garde le plus proche sur le HUD en mission. (Permanent)</div>
+                        <button class="buy-btn btn-action">Buy for $600</button>
+                    </div>
+                    <div class="shop-item" data-item="jammer" data-price="450">
+                        <div class="item-name">📡 Brouilleur de Caméras</div>
+                        <div class="item-desc">Réduit définitivement la vitesse de détection des caméras de 50%. (Permanent)</div>
+                        <button class="buy-btn btn-action">Buy for $450</button>
+                    </div>
+                    <div class="shop-item" data-item="kevlar" data-price="500">
+                        <div class="item-name">👕 Gilet en Kevlar Tactique</div>
+                        <div class="item-desc">Réduit les dégâts de 40% et donne +50 PV bonus au van de fuite. (Permanent)</div>
+                        <button class="buy-btn btn-action">Buy for $500</button>
+                    </div>
+                </div>
+                
+                <div class="inventory-status" style="margin-top: 30px;">
+                    <h3>YOUR CURRENT GEAR & UPGRADES</h3>
+                    <div class="gear-list">
+                        <span>Lockpicks: <strong id="inv-lockpicks">3</strong></span>
+                        <span>Titanium Durability: <strong id="inv-titanium-durability">0/5</strong></span>
+                        <span>IEM Charges: <strong id="inv-iem">0</strong></span>
+                        <span>Sleeping Gas: <strong id="inv-gas">1</strong></span>
+                        <span>Crowbar: <strong id="inv-crowbar">No</strong></span>
+                        <span>Stealth Boots: <strong id="inv-boots">No</strong></span>
+                        <span>Gants Furtifs: <strong id="upg-gloves">No</strong></span>
+                        <span>Vision Nocturne: <strong id="upg-nvg">No</strong></span>
+                        <span>Serveur Darknet: <strong id="upg-server">No</strong></span>
+                        <span>Van Châssis: <strong id="upg-chassis">No</strong></span>
+                        <span>Van Moteur V8: <strong id="upg-v8">No</strong></span>
+                        <span>Radar de Proximité: <strong id="upg-radar">No</strong></span>
+                        <span>Brouilleur Caméras: <strong id="upg-jammer">No</strong></span>
+                        <span>Gilet Kevlar: <strong id="upg-kevlar">No</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONTRACTS SECTION -->
+            <div id="contracts-section" class="panel-section hidden">
+                <h2>AVAILABLE JOBS</h2>
+                <p class="section-desc">Accept a job to launch the heist. High risk, high reward.</p>
+                <div class="contracts-list">
+                    <div class="contract-card" data-contract="shop">
+                        <div class="contract-header">
+                            <span class="contract-title">Convenience Store Heist</span>
+                            <span class="contract-difficulty text-green">EASY</span>
+                        </div>
+                        <div class="contract-details">
+                            <p><strong>Objective:</strong> Infiltrate the shop floor. Safe locked at back.</p>
+                            <p><strong>Environment:</strong> Squeaky wooden backroom floor.</p>
+                            <p><strong>Security:</strong> 1 Guard. Low-grade safe.</p>
+                            <p><strong>Loot Potential:</strong> ~$1,500 - $3,000</p>
+                        </div>
+                        <button class="launch-btn btn-main">START CONTRACT</button>
+                    </div>
+
+                    <div class="contract-card" data-contract="villa">
+                        <div class="contract-header">
+                            <span class="contract-title">Rich Politician's Mansion</span>
+                            <span class="contract-difficulty text-yellow">MEDIUM</span>
+                        </div>
+                        <div class="contract-details">
+                            <p><strong>Objective:</strong> Infiltrate the mansion. Steal heavy televisions, cash and secure USB.</p>
+                            <p><strong>Environment:</strong> Rain reduces step noise and vision. Spotlights, security cameras.</p>
+                            <p><strong>Security:</strong> 2 guards, guard dog, lasers, electrical box locks, glass patio.</p>
+                            <p><strong>Loot Potential:</strong> ~$10,000 - $16,500</p>
+                        </div>
+                        <button class="launch-btn btn-main">START CONTRACT</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DISMANTLE SECTION -->
+            <div id="dismantle-section" class="panel-section hidden">
+                <h2>🔧 DISMANTLE STATION</h2>
+                <p class="section-desc">Strip stolen heavy electronics (Televisions, Laptops) into raw copper and motherboards. High value, zero police trace risk!</p>
+                <div id="dismantle-container">
+                    <p style="color: var(--text-muted);">No electronics available for dismantling. Bring back heavy items in your car trunk!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. GAME SCREEN (3D FPS WEBGL CANVAS) -->
+    <div id="game-screen" class="screen hidden">
+        <canvas id="gameCanvas3D"></canvas>
+        
+        <!-- Full-screen Game Overlays -->
+        <div id="nightvision-overlay" class="hidden"></div>
+        <div id="police-flash-overlay" class="hidden"></div>
+        
+        <!-- Crosshair -->
+        <div id="crosshair"></div>
+        <div id="interaction-prompt" class="hidden">[E] INTERACT</div>
+
+        <!-- 3D HUD OVERLAY -->
+        <div id="hud-overlay">
+            <!-- HEIST STEALTH HUD -->
+            <div id="hud-stealth">
+                <div class="hud-top">
+                    <div id="mission-timer">TIME: 05:00</div>
+                    <div id="radar-display" class="hidden" style="font-family: 'Share Tech Mono', monospace; font-size: 14px; color: var(--neon-blue); text-shadow: 0 0 8px var(--neon-blue); font-weight: bold; background: rgba(0,0,0,0.6); padding: 5px 12px; border-radius: 4px; border: 1px solid var(--border-color);">RADAR: SÛR</div>
+                    <div id="backpack-status">BAG: Empty (0/2)</div>
+                </div>
+
+                <!-- Sound Waves HUD effect -->
+                <div id="sound-indicator">
+                    <div class="sound-wave" id="wave-1"></div>
+                    <div class="sound-wave" id="wave-2"></div>
+                    <span id="noise-db-text" style="font-size: 11px; color: #fff; font-weight: bold; letter-spacing: 2px;">12 dB</span>
+                </div>
+
+                <div class="hud-bottom">
+                    <div class="hud-card">
+                        <div class="label">STEALTH STATE</div>
+                        <div id="stealth-indicator" class="stealth-clear">CLEAR</div>
+                        <div class="suspicion-bar">
+                            <div id="suspicion-fill" style="width: 0%;"></div>
+                        </div>
+                        <div class="label" style="margin-top: 10px;">BREATH / APNÉE (Touche X)</div>
+                        <div class="suspicion-bar" style="background: rgba(59, 130, 246, 0.15);">
+                            <div id="breath-fill" style="width: 100%; background: #3b82f6; height: 100%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="hud-card">
+                        <div class="label">SELECTED TOOL</div>
+                        <div id="active-tool-display">HANDS</div>
+                        <div class="tool-count" id="tool-ammo"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DRIVING PHASE HUD -->
+            <div id="hud-driving" class="hidden">
+                <div class="hud-top">
+                    <div id="drive-distance" style="font-family: 'Orbitron', sans-serif; font-size: 20px; font-weight: bold;">FUITE : 0 / 1000m</div>
+                    <div id="drive-stars" style="font-family: 'Orbitron', sans-serif; font-size: 20px; color: var(--neon-yellow); font-weight: bold;">RECHERCHE : ⭐⭐⭐</div>
+                </div>
+                <div class="driving-speedometer">
+                    <div style="font-size: 11px; color: var(--text-muted); font-weight: bold;">VAN GETAWAY SPEED</div>
+                    <div style="font-size: 32px; font-family: 'Orbitron', sans-serif; font-weight: 900; color: #fff;"><span id="drive-speed-val">60</span> km/h</div>
+                    <div style="width: 160px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-top: 8px;">
+                        <div id="drive-health-fill" style="width: 100%; height: 100%; background: var(--neon-green);"></div>
+                    </div>
+                    <div style="font-size: 9px; color: var(--text-muted); margin-top: 6px; text-transform: uppercase;">A/D to steer | SPACE to brake | L to toggle headlights</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Radio Comm Window -->
+        <div id="radio-box" class="radio-hidden">
+            <div class="radio-header">📟 TEAMMATE FEED</div>
+            <div id="radio-text">Guetteur : "Marcus à l'écoute. La zone est calme."</div>
+        </div>
+
+        <!-- Pointer Lock Block Screen -->
+        <div id="lock-screen" class="overlay">
+            <div class="menu-box">
+                <h2 class="title">INFILTRATION</h2>
+                <p class="subtitle">Use <strong>WASD / ZQSD</strong> to Move<br>Use <strong>MOUSE</strong> to Look<br>Press <strong>E</strong> to Interact / Take Loot<br>Press <strong>C</strong> to Crouch (Quiet)<br>Press <strong>X</strong> to Hold Breath (Apnée)<br>Press <strong>1, 2, 3, 4, 5, 6, 7, 8</strong> to Switch Tools</p>
+                <button id="lock-btn" class="btn-main">▶ LOCK MOUSE & HEIST</button>
+                <button id="abort-btn" class="btn-secondary" style="margin-top: 15px; width: 100%;">❌ ABORT MISSION</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. MINI-GAME OVERLAYS -->
+    <!-- A. Lockpicking Overlay -->
+    <div id="lockpick-screen" class="overlay hidden">
+        <div class="lockpick-box">
+            <h2>🔐 SECURE LOCKPICKING</h2>
+            <p>Press <strong>SPACE</strong> when the green sweet spot aligns with the rotating pin!</p>
+            <div class="lock-visual">
+                <div class="lock-ring">
+                    <div id="lockpick-sweetspot"></div>
+                    <div id="lockpick-indicator"></div>
+                </div>
+            </div>
+            <div class="lock-tumblers">
+                <div class="tumbler" id="tumbler-0"></div>
+                <div class="tumbler" id="tumbler-1"></div>
+                <div class="tumbler" id="tumbler-2"></div>
+            </div>
+            <button id="abort-lockpick" class="btn-secondary" style="margin-top: 20px;">Force Abort (Alarm risk!)</button>
+        </div>
+    </div>
+
+    <!-- B. Hacking Terminal Overlay (Electrical Sabotage) -->
+    <div id="hacking-screen" class="overlay hidden">
+        <div class="terminal-box" style="width: 480px;">
+            <div class="terminal-header">⚡ BOÎTIER ÉLECTRIQUE - DÉCRYPTAGE</div>
+            <div class="terminal-body text-center">
+                <p style="margin-bottom: 12px;">Utilisez <strong>A</strong> et <strong>D</strong> pour aligner les fréquences.</p>
+                <p style="margin-bottom: 20px; font-size: 13px;">Appuyez sur <strong>ESPACE</strong> quand l'indicateur blanc se superpose à la barre jaune !</p>
+                
+                <div id="elec-freq-container" style="position: relative; width: 100%; height: 50px; background: #050510; border: 1px solid var(--neon-green); margin-bottom: 20px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                    <!-- Hex list sliding -->
+                    <div id="elec-hex-scroller" style="font-family: 'Share Tech Mono', monospace; font-size: 18px; color: rgba(57,255,20,0.3); display: flex; gap: 20px; white-space: nowrap;">
+                        FF A2 3C 9B 4E B2 7A D8 1E C2 A2 3C 9B
+                    </div>
+                    <!-- Yellow bar indicators -->
+                    <div id="elec-target-bar" style="position: absolute; left: 50%; top: 0; width: 8px; height: 100%; background: var(--neon-yellow); transform: translateX(-50%); box-shadow: 0 0 10px var(--neon-yellow);"></div>
+                    <div id="elec-indicator-bar" style="position: absolute; left: 0; top: 0; width: 6px; height: 100%; background: #fff; box-shadow: 0 0 10px #fff;"></div>
+                </div>
+                
+                <div style="display: flex; justify-content: center; gap: 12px; margin-bottom: 20px;">
+                    <div class="tumbler locked" id="elec-diode-0"></div>
+                    <div class="tumbler locked" id="elec-diode-1"></div>
+                    <div class="tumbler locked" id="elec-diode-2"></div>
+                    <div class="tumbler locked" id="elec-diode-3"></div>
+                </div>
+                
+                <!-- Inside Box: Cables (shown after unlocking combination) -->
+                <div id="elec-cables-panel" class="hidden" style="border-top: 1px solid rgba(57, 255, 20, 0.3); padding-top: 15px; margin-top: 10px;">
+                    <p style="margin-bottom: 12px; color: var(--neon-blue); font-size: 13px;">SABOTAGE DES CÂBLES :</p>
+                    <div style="display: flex; justify-content: space-around; margin-bottom: 15px;">
+                        <button id="cable-red-btn" class="btn-action" style="border-color: #ef4444; color: #ef4444; font-size: 11px;">🔴 ALARME (Red)</button>
+                        <button id="cable-blue-btn" class="btn-action" style="border-color: #3b82f6; color: #3b82f6; font-size: 11px;">🔵 LUMIÈRES (Blue)</button>
+                        <button id="cable-yellow-btn" class="btn-action" style="border-color: #eab308; color: #eab308; font-size: 11px;">🟡 CAMÉRAS (Yellow)</button>
+                    </div>
+                    <button id="bridge-cables-btn" class="btn-main" style="width: 100%; margin-top: 10px; font-size: 12px;">⚡ PONTER BLEU + JAUNE (COURT-CIRCUIT LOCAL)</button>
+                </div>
+                
+                <button id="abort-elec" class="btn-secondary" style="margin-top: 15px; width: 100%;">Fermer le boîtier</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- C. Glass Cutter Overlay -->
+    <div id="glass-cutter-screen" class="overlay hidden">
+        <div class="lockpick-box" style="width: 380px;">
+            <h2>🪟 COUPE-VERRE À VENTOUSE</h2>
+            <p>Cliquez/maintenez enfoncé le bouton de la souris, puis suivez lentement le cercle blanc pointillé sans dévier pour détacher la vitre !</p>
+            
+            <div id="glass-cutter-area" style="position: relative; width: 180px; height: 180px; margin: 20px auto; border-radius: 50%; border: 2px dashed rgba(255,255,255,0.2); background: rgba(255,255,255,0.01); display: flex; align-items: center; justify-content: center; cursor: crosshair;">
+                <div id="glass-circle-guide" style="position: absolute; width: 130px; height: 130px; border-radius: 50%; border: 3px dashed rgba(255,255,255,0.5); pointer-events: none;"></div>
+                <div id="glass-tracer" style="position: absolute; width: 14px; height: 14px; border-radius: 50%; background: var(--neon-blue); box-shadow: 0 0 10px var(--neon-blue); pointer-events: none; transform: translate(-50%, -50%); left: 90px; top: 25px;"></div>
+            </div>
+            
+            <div class="progress-bar-bg" style="margin-bottom: 15px;">
+                <div id="glass-progress-fill" class="progress-bar-fill" style="width: 0%; background: var(--neon-blue);"></div>
+            </div>
+            <p id="glass-cutter-status" style="font-weight: bold; color: var(--neon-blue); font-size: 14px; margin-bottom: 15px;">Progression : 0%</p>
+            <button id="abort-glass" class="btn-secondary" style="width: 100%;">Abandonner</button>
+        </div>
+    </div>
+
+    <!-- D. Thermal Drill Overlay -->
+    <div id="thermal-drill-screen" class="overlay hidden">
+        <div class="lockpick-box" style="width: 380px;">
+            <h2>🔥 PERCEUSE THERMIQUE</h2>
+            <p style="margin-bottom: 15px;">Cliquez à répétition pour garder la température dans la zone verte (180°C - 220°C). Évitez la surchauffe rouge !</p>
+            
+            <div style="position: relative; width: 60px; height: 180px; background: rgba(0,0,0,0.5); border: 2px solid var(--border-color); border-radius: 8px; margin: 0 auto 20px; overflow: hidden; display: flex; flex-direction: column-reverse;">
+                <div id="drill-temp-fill" style="width: 100%; height: 0%; background: linear-gradient(0deg, #3b82f6 0%, #eab308 60%, #ef4444 100%);"></div>
+                <div style="position: absolute; bottom: 70%; width: 100%; height: 20%; background: rgba(57,255,20,0.2); border-top: 1.5px dashed var(--neon-green); border-bottom: 1.5px dashed var(--neon-green); display: flex; align-items: center; justify-content: center; font-size: 9px; color: var(--neon-green); font-weight: bold; pointer-events: none;">
+                    180°-220°
+                </div>
+            </div>
+            
+            <div style="font-size: 22px; font-family: 'Orbitron', sans-serif; font-weight: 900; margin-bottom: 10px; color: #fff;">
+                <span id="drill-temp-val" class="text-green">20</span>°C
+            </div>
+            
+            <div class="progress-bar-bg" style="margin-bottom: 15px;">
+                <div id="drill-progress-fill" class="progress-bar-fill" style="width: 0%; background: var(--neon-green);"></div>
+            </div>
+            <p id="drill-status" style="font-weight: bold; font-family: 'Orbitron', sans-serif; font-size: 12px; margin-bottom: 15px;">FORAGE : 0%</p>
+            <button id="abort-drill" class="btn-secondary" style="width: 100%;">Abandonner le forage</button>
+        </div>
+    </div>
+
+    <!-- E. Gold Blowtorch Melting Overlay -->
+    <div id="blowtorch-screen" class="overlay hidden">
+        <div class="lockpick-box" style="width: 400px;">
+            <h2>🔥 FUSION DE LINGOT - BLANCHIMENT</h2>
+            <p>Faites glisser le curseur le long du trait rouge pour faire fondre le sceau de la banque et rendre l'or intraçable !</p>
+            
+            <div id="blowtorch-area" style="position: relative; width: 320px; height: 100px; background: #334155; border: 3px solid #1e293b; border-radius: 8px; margin: 20px auto; overflow: hidden; cursor: crosshair;">
+                <div id="gold-bank-stamp" style="font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 20px; color: #64748b; letter-spacing: 3px; display: flex; align-items: center; justify-content: center; height: 100%; pointer-events: none; user-select: none;">
+                    RESERVE BANK NY
+                </div>
+                <div id="gold-fusion-line" style="position: absolute; top: 50px; left: 10px; width: 300px; height: 6px; background: rgba(239,68,68,0.4); border-radius: 3px; pointer-events: none;"></div>
+                <div id="gold-fusion-progress-line" style="position: absolute; top: 50px; left: 10px; width: 0px; height: 6px; background: #f97316; box-shadow: 0 0 10px #f97316; border-radius: 3px; pointer-events: none;"></div>
+                <div id="torch-spark" class="hidden" style="position: absolute; width: 12px; height: 12px; border-radius: 50%; background: #f97316; box-shadow: 0 0 15px 5px #ffb700; transform: translate(-50%, -50%); pointer-events: none;"></div>
+            </div>
+            
+            <p id="torch-status" style="font-weight: bold; color: var(--neon-yellow); margin-bottom: 20px;">FUSION DE L'OR : 0%</p>
+            <button id="close-blowtorch-btn" class="btn-main" style="width: 100%;">Terminer la fusion</button>
+        </div>
+    </div>
+
+    <!-- 4. CAR TRUNK INVENTORY MENU -->
+    <div id="trunk-screen" class="overlay hidden">
+        <div class="menu-box text-center" style="width: 720px;">
+            <h2>🚗 CAR GETAWAY TRUNK (16 SLOTS)</h2>
+            <p>Drag or click items in your bag to pack them in the trunk. Pack wisely!</p>
+            
+            <div class="trunk-split" style="margin-top: 20px;">
+                <div class="inv-col" style="width: 280px; height: 350px;">
+                    <h3>🎒 PERSONAL BAG (Max 2)</h3>
+                    <div id="personal-bag-list"></div>
+                </div>
+                
+                <div class="inv-col" style="width: 340px; height: 350px; display: flex; flex-direction: column;">
+                    <h3>📦 TRUNK STORAGE GRID</h3>
+                    <div id="trunk-grid-container" class="trunk-grid">
+                        <!-- 4x4 Grid rendered in JS -->
+                    </div>
+                    <div id="trunk-usage-label" style="font-size: 12px; margin-top: 10px; font-weight: bold;">Space: 0 / 16 Slots occupied</div>
+                    <div id="escape-risk-warning" class="text-green" style="font-size: 11px; margin-top: 4px; font-weight: bold;">Escape Risk: 0% (Clean closure)</div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 15px; margin-top: 25px;">
+                <button id="secure-escape-btn" class="btn-main" style="flex: 1;">🚨 DÉMARRER LE VAN (ESCAPE Segment)</button>
+                <button id="close-trunk-btn" class="btn-secondary" style="flex: 1;">🔙 BACK TO STEALTH</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. END MISSION RESULT SCREEN -->
+    <div id="result-screen" class="overlay hidden">
+        <div class="menu-box text-center">
+            <h1 id="result-title">HEIST SUCCESS!</h1>
+            <p id="result-subtitle">You got away before the police arrived.</p>
+            
+            <div class="result-details">
+                <div class="result-row">
+                    <span>Loot Secured:</span>
+                    <strong id="res-loot-secured">0 Items</strong>
+                </div>
+                <div class="result-row">
+                    <span>Loot Value:</span>
+                    <strong id="res-loot-value" class="text-yellow">$0</strong>
+                </div>
+            </div>
+
+            <button id="back-hideout-btn" class="btn-main" style="margin-top: 30px;">RETURN TO HIDEOUT</button>
+        </div>
+    </div>
+
+    <!-- JS -->
+    <script src="js/game.js?v=3.6"></script>
+</body>
+</html>

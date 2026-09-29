@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Track Builder</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas" width="400" height="600"></canvas>
+        <div id="ui-layer">
+            <div id="score">SCORE: 0</div>
+            <div id="start-screen" class="screen">
+                <h1>NEON TRACK BUILDER</h1>
+                <p>Use ARROW KEYS to move</p>
+                <p>UP ARROW to rotate</p>
+                <p>Build the road before the car falls!</p>
+                <button id="start-btn">PLAY NOW</button>
+            </div>
+            <div id="game-over-screen" class="screen hidden">
+                <h1>CRITICAL FAILURE</h1>
+                <p>Final Score: <span id="final-score">0</span></p>
+                <button id="restart-btn">REBOOT</button>
+            </div>
+        </div>
+    </div>
+    <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chrono Stack - Time Loop Puzzle Platformer</title>
+    <meta name="description" content="Stack your past selves to reach the exit! A unique time-loop puzzle platformer where your ghosts become your platforms.">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- MENU -->
+    <div id="menu-screen" class="overlay">
+        <div class="menu-box">
+            <h1 class="title">CHRONO<br>STACK</h1>
+            <p class="subtitle">Stack your past selves.<br>Reach the exit.</p>
+            <div class="controls-info">
+                <span>◄ ► Move</span>
+                <span>▲ Jump</span>
+            </div>
+            <button id="play-btn" class="btn-main">▶ START</button>
+        </div>
+    </div>
+
+    <!-- HUD -->
+    <div id="hud" class="hidden">
+        <div id="hud-left">
+            <div id="level-display">LEVEL 1</div>
+            <div id="loop-display">LOOP 1</div>
+        </div>
+        <div id="hud-center">
+            <div id="timer-bar-bg">
+                <div id="timer-bar-fill"></div>
+            </div>
+            <div id="timer-text">5.0s</div>
+        </div>
+        <div id="hud-right">
+            <button id="reset-btn" class="btn-small">↺ RESET</button>
+        </div>
+    </div>
+
+    <!-- LEVEL COMPLETE -->
+    <div id="complete-screen" class="overlay hidden">
+        <div class="menu-box">
+            <h2 class="complete-title">✓ LEVEL COMPLETE</h2>
+            <p class="complete-info">Loops used: <span id="loops-used">1</span></p>
+            <button id="next-btn" class="btn-main">NEXT LEVEL →</button>
+        </div>
+    </div>
+
+    <!-- WIN SCREEN -->
+    <div id="win-screen" class="overlay hidden">
+        <div class="menu-box">
+            <h2 class="win-title">🏆 YOU WIN!</h2>
+            <p class="subtitle">You mastered time itself.</p>
+            <button id="replay-btn" class="btn-main">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <script src="js/game.js"></script>
+</body>
+</html>

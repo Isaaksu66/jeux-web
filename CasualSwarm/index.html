@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Casual Swarm</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="ui-layer">
+        <div id="top-bar">
+            <div id="xp-bar-container">
+                <div id="xp-bar-fill"></div>
+            </div>
+            <div id="level-display">LVL 1</div>
+        </div>
+
+        <div id="stats">
+            <span class="stat-bubble" id="score">Score: 0</span>
+            <span class="stat-bubble" id="timer">00:00</span>
+            <span class="stat-bubble" id="fps">FPS: 60</span>
+            <span class="stat-bubble" id="high-score" style="background: rgba(183, 28, 28, 0.8);">Record: VAGUE 1</span>
+        </div>
+
+        <div id="tutorial-text" class="text-outline">
+            ZQSD / Flèches pour se déplacer<br>
+            Maintenir Clic Gauche pour tirer
+        </div>
+
+        <!-- Ecran de Level Up -->
+        <div id="level-up-screen" class="hidden overlay">
+            <div class="panel">
+                <h1 class="title-text">NIVEAU SUPÉRIEUR !</h1>
+                <h2 id="new-level-title" class="subtitle-text">Niveau 2</h2>
+                <div id="upgrades-container">
+                    <!-- Les cartes d'upgrade seront injectées ici -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Ecran de Game Over -->
+        <div id="game-over-screen" class="hidden overlay">
+            <div class="panel">
+                <h1 class="title-text error">FIN DE PARTIE</h1>
+                <h2 class="subtitle-text">Vague atteinte : <span id="final-wave">1</span></h2>
+                <h3 class="subtitle-text">Score : <span id="final-score">0</span></h3>
+                
+                <button id="btn-revive" class="btn-casual btn-orange">▶ Regarder Pub pour Ressusciter</button>
+                <button id="btn-restart" class="btn-casual btn-cyan">REJOUER</button>
+            </div>
+        </div>
+
+        <!-- Fausse Pub -->
+        <div id="ad-screen" class="hidden overlay" style="background: black; z-index: 999;">
+            <h1 style="color: white; font-size: 3rem;">Publicité Sponsorisée</h1>
+            <h2 id="ad-timer" style="color: yellow; font-size: 5rem; margin-top: 20px;">3</h2>
+            <p style="color: #aaa; margin-top: 50px;">Merci de soutenir les créateurs !</p>
+        </div>
+    </div>
+
+    <script src="js/MathUtils.js"></script>
+    <script src="js/Audio.js"></script>
+    <script src="js/FloatingText.js"></script>
+    <script src="js/Input.js"></script>
+    <script src="js/Particles.js"></script>
+    <script src="js/Renderer.js"></script>
+    <script src="js/Player.js"></script>
+    <script src="js/Enemy.js"></script>
+    <script src="js/Weapons.js"></script>
+    <script src="js/Drops.js"></script>
+    <script src="js/Game.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

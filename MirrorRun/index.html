@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mirror Run - Control Two Worlds at Once!</title>
+    <meta name="description" content="Two runners, one button, mirrored worlds. Can you keep both alive at the same time?">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family:'Outfit',sans-serif;
+            background:#0a0a1a;
+            overflow:hidden;
+            width:100vw; height:100vh;
+            user-select:none;
+        }
+        canvas { display:block; position:fixed; top:0; left:0; }
+        .overlay {
+            position:fixed; top:0; left:0; width:100%; height:100%;
+            display:flex; justify-content:center; align-items:center;
+            z-index:100; background:rgba(10,10,26,0.92);
+            backdrop-filter:blur(10px);
+        }
+        .hidden { display:none!important; }
+        .box { text-align:center; animation:popIn 0.5s cubic-bezier(0.175,0.885,0.32,1.275); }
+        .title {
+            font-size:64px; font-weight:900; line-height:1;
+            background:linear-gradient(135deg,#f472b6,#818cf8);
+            background-size:200% 200%;
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+            background-clip:text;
+            animation:shimmer 3s ease infinite;
+            margin-bottom:10px; letter-spacing:-2px;
+        }
+        .sub { font-size:17px; color:#667; margin-bottom:12px; line-height:1.5; }
+        .controls {
+            display:flex; gap:15px; justify-content:center; margin-bottom:30px;
+        }
+        .controls span {
+            background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);
+            border-radius:10px; padding:8px 16px; font-size:13px; color:#99a;
+        }
+        .btn {
+            font-family:'Outfit',sans-serif; font-size:22px; font-weight:800;
+            color:#fff; background:linear-gradient(135deg,#f472b6,#818cf8);
+            border:none; border-radius:14px; padding:16px 50px; cursor:pointer;
+            box-shadow:0 6px 25px rgba(129,140,248,0.4);
+            transition:all 0.2s; letter-spacing:1px;
+        }
+        .btn:hover { transform:translateY(-2px) scale(1.03); box-shadow:0 10px 35px rgba(129,140,248,0.6); }
+        .btn:active { transform:scale(0.97); }
+        #hud {
+            position:fixed; top:0; left:0; right:0; z-index:50;
+            display:flex; justify-content:space-between; align-items:center;
+            padding:10px 20px; pointer-events:none;
+        }
+        #score-display { font-size:28px; font-weight:900; color:#fff; text-shadow:0 2px 10px rgba(0,0,0,0.5); }
+        #best-display { font-size:16px; font-weight:600; color:#667; }
+        #speed-display { font-size:16px; font-weight:700; color:#818cf8; }
+        /* Divider line in the middle */
+        #divider-label {
+            position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
+            z-index:40; pointer-events:none;
+            font-size:12px; color:rgba(255,255,255,0.15); letter-spacing:5px;
+            font-weight:800;
+        }
+        .result-title { font-size:44px; font-weight:900; color:#f472b6; margin-bottom:8px; }
+        .result-sub { font-size:20px; color:#aab; margin-bottom:5px; }
+        .result-best { font-size:16px; color:#667; margin-bottom:30px; }
+        @keyframes popIn { from{opacity:0;transform:scale(0.8) translateY(20px)} to{opacity:1;transform:scale(1) translateY(0)} }
+        @keyframes shimmer { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+    </style>
+</head>
+<body>
+    <canvas id="c"></canvas>
+
+    <div id="divider-label" class="hidden">▲ LIGHT WORLD ━━━━━━━━━━━━ ▼ SHADOW WORLD</div>
+
+    <div id="menu" class="overlay">
+        <div class="box">
+            <h1 class="title">MIRROR<br>RUN</h1>
+            <p class="sub">Two runners. One button. Mirrored obstacles.<br>Keep BOTH alive!</p>
+            <p style="color: #f472b6; font-size: 12px; margin-top: -5px; margin-bottom: 15px; font-weight: bold; letter-spacing: 1px; text-shadow: 0 0 8px rgba(244,114,182,0.4);">VERSION 2.0 (PROGRESSIVE & IMPROVED)</p>
+            <div class="controls">
+                <span>SPACE / TAP = Jump</span>
+            </div>
+            <p id="menu-best" style="color: #aab; font-size: 15px; margin-bottom: 20px; font-weight: bold; text-shadow: 0 0 5px rgba(255,255,255,0.1);"></p>
+            <button class="btn" id="play-btn">▶ RUN!</button>
+        </div>
+    </div>
+
+    <div id="hud" class="hidden">
+        <div>
+            <div id="score-display">0 m</div>
+            <div id="best-display">Best: 0 m</div>
+        </div>
+        <div id="speed-display">×1.0</div>
+    </div>
+
+    <div id="result" class="overlay hidden">
+        <div class="box">
+            <h2 class="result-title" id="result-title">CRASH!</h2>
+            <p class="result-sub" id="result-score">0 m</p>
+            <p class="result-best" id="result-best">Best: 0 m</p>
+            <button class="btn" id="retry-btn">↺ RETRY</button>
+        </div>
+    </div>
+
+    <script>
+    // =====================================================
+    // MIRROR RUN - Dual Runner with Mirrored Obstacles
+    // =====================================================
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // ============ CONSTANTS ============
+    const GRAVITY = 0.6;
+    const JUMP_FORCE = -14;
+    const RUNNER_SIZE = 28;
+    const OBSTACLE_W = 30;
+    const GAP_MIN = 120;
+    const GAP_MAX = 200;
+
+    // ============ STATE ============
+    let state = 'MENU';
+    let score = 0;
+    let bestScore = 0;
+    try {
+        bestScore = parseInt(localStorage.getItem('mirror_run_best') || '0', 10);
+    } catch (e) {
+        console.warn('localStorage is not available:', e);
+    }
+    let speed = 4;
+    let distance = 0;
+    let particles = [];
+
+    // ============ RUNNERS ============
+    // Top runner (Light World) and Bottom runner (Shadow World)
+    let topRunner = { x:0, y:0, vy:0, onGround:false, alive:true, color:'#f472b6', world:'light' };
+    let botRunner = { x:0, y:0, vy:0, onGround:false, alive:true, color:'#818cf8', world:'shadow' };
+
+    // ============ OBSTACLES ============
+    // Each obstacle has: x, topH (height of obstacle in top world), botH (height in bottom world)
+    // The trick: when top has tall obstacle, bottom has short one and vice versa
+    let obstacles = [];
+
+    // ============ FUNCTIONS ============
+    function halfH() { return canvas.height / 2; }
+    function topGroundY() { return halfH() - 40; }
+    function botGroundY() { return canvas.height - 40; }
+
+    function spawnObstacle() {
+        const x = canvas.width + 50;
+        
+        let topH = 0;
+        let botH = 0;
+        let topCeil = 0;
+        let botCeil = 0;
+        
+        if (score < 15) {
+            // Phase 1: Only top floor obstacles
+            topH = 35 + Math.random() * 25; // height 35-60
+        } else if (score < 30) {
+            // Phase 2: Only bottom floor obstacles
+            botH = 35 + Math.random() * 25;
+        } else if (score < 60) {
+            // Phase 3: Alternating top/bottom floor obstacles
+            if (Math.random() < 0.5) {
+                topH = 35 + Math.random() * 35;
+            } else {
+                botH = 35 + Math.random() * 35;
+            }
+        } else if (score < 100) {
+            // Phase 4: Introduce single ceilings or floor obstacles
+            const r = Math.random();
+            if (r < 0.4) {
+                topH = 35 + Math.random() * 40;
+            } else if (r < 0.8) {
+                botH = 35 + Math.random() * 40;
+            } else {
+                topCeil = 30 + Math.random() * 35; // ceiling in top
+            }
+        } else {
+            // Phase 5: Hard mode - Mixed, but always mathematically possible
+            const r = Math.random();
+            if (r < 0.3) {
+                // Both floors (identical, easy to jump together)
+                const h = 35 + Math.random() * 35;
+                topH = h;
+                botH = h;
+            } else if (r < 0.55) {
+                topH = 35 + Math.random() * 45;
+            } else if (r < 0.8) {
+                botH = 35 + Math.random() * 45;
+            } else if (r < 0.9) {
+                topCeil = 30 + Math.random() * 35;
+            } else {
+                botCeil = 30 + Math.random() * 35;
+            }
+        }
+
+        obstacles.push({
+            x,
+            topH,
+            botH,
+            topCeil,
+            botCeil,
+            scored: false
+        });
+    }
+
+    function resetRunners() {
+        const rx = 80;
+        topRunner = { x: rx, y: topGroundY() - RUNNER_SIZE, vy: 0, onGround: true, alive: true, color: '#f472b6', world: 'light' };
+        botRunner = { x: rx, y: botGroundY() - RUNNER_SIZE, vy: 0, onGround: true, alive: true, color: '#818cf8', world: 'shadow' };
+    }
+
+    function jump() {
+        if (state !== 'PLAYING') return;
+        if (topRunner.onGround) {
+            topRunner.vy = JUMP_FORCE;
+            topRunner.onGround = false;
+            spawnParticle(topRunner.x + RUNNER_SIZE/2, topRunner.y + RUNNER_SIZE, topRunner.color, 5);
+        }
+        if (botRunner.onGround) {
+            botRunner.vy = JUMP_FORCE;
+            botRunner.onGround = false;
+            spawnParticle(botRunner.x + RUNNER_SIZE/2, botRunner.y + RUNNER_SIZE, botRunner.color, 5);
+        }
+    }
+
+    function updateRunner(runner, groundY) {
+        if (!runner.alive) return;
+        runner.vy += GRAVITY;
+        if (runner.vy > 15) runner.vy = 15;
+        runner.y += runner.vy;
+
+        // Ground
+        if (runner.y + RUNNER_SIZE >= groundY) {
+            runner.y = groundY - RUNNER_SIZE;
+            runner.vy = 0;
+            runner.onGround = true;
+        }
+    }
+
+    function checkCollisions(runner, groundY, isTop) {
+        if (!runner.alive) return;
+        for (const obs of obstacles) {
+            const ox = obs.x;
+            // Check if runner overlaps with obstacle X
+            if (runner.x + RUNNER_SIZE > ox && runner.x < ox + OBSTACLE_W) {
+                const h = isTop ? obs.topH : obs.botH;
+                const ceil = isTop ? obs.topCeil : obs.botCeil;
+
+                // Ground obstacle (wall rising from floor)
+                if (h > 0) {
+                    const obsTop = groundY - h;
+                    if (runner.y + RUNNER_SIZE > obsTop) {
+                        runner.alive = false;
+                        spawnParticle(runner.x + RUNNER_SIZE/2, runner.y + RUNNER_SIZE/2, runner.color, 20);
+                    }
+                }
+                // Ceiling obstacle (hanging from top of world)
+                if (ceil > 0) {
+                    const worldTop = isTop ? 0 : halfH();
+                    const obsBottom = worldTop + ceil;
+                    if (runner.y < obsBottom) {
+                        runner.alive = false;
+                        spawnParticle(runner.x + RUNNER_SIZE/2, runner.y + RUNNER_SIZE/2, runner.color, 20);
+                    }
+                }
+            }
+        }
+    }
+
+    function spawnParticle(x, y, color, count) {
+        for (let i = 0; i < count; i++) {
+            const a = Math.random() * Math.PI * 2;
+            const s = 1 + Math.random() * 4;
+            particles.push({
+                x, y, vx: Math.cos(a)*s, vy: Math.sin(a)*s - 1,
+                life: 1, decay: 0.02 + Math.random() * 0.03,
+                color, size: 2 + Math.random() * 5
+            });
+        }
+    }
+
+    // ============ DRAWING ============
+    function drawWorld() {
+        const h = halfH();
+
+        // TOP WORLD - Light (warm tones)
+        let grad = ctx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, '#1a0a20');
+        grad.addColorStop(1, '#2a1030');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, canvas.width, h);
+
+        // Top ground
+        ctx.fillStyle = '#3a1545';
+        ctx.fillRect(0, topGroundY(), canvas.width, 40);
+        ctx.strokeStyle = '#f472b6';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = '#f472b6';
+        ctx.shadowBlur = 8;
+        ctx.beginPath(); ctx.moveTo(0, topGroundY()); ctx.lineTo(canvas.width, topGroundY()); ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // DIVIDER
+        ctx.fillStyle = 'rgba(255,255,255,0.08)';
+        ctx.fillRect(0, h - 1, canvas.width, 2);
+
+        // BOTTOM WORLD - Shadow (cool tones)
+        grad = ctx.createLinearGradient(0, h, 0, canvas.height);
+        grad.addColorStop(0, '#0a0a25');
+        grad.addColorStop(1, '#0a1530');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, h, canvas.width, h);
+
+        // Bottom ground
+        ctx.fillStyle = '#0a2040';
+        ctx.fillRect(0, botGroundY(), canvas.width, 40);
+        ctx.strokeStyle = '#818cf8';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = '#818cf8';
+        ctx.shadowBlur = 8;
+        ctx.beginPath(); ctx.moveTo(0, botGroundY()); ctx.lineTo(canvas.width, botGroundY()); ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Stars in both worlds (parallax)
+        ctx.fillStyle = '#fff';
+        for (let i = 0; i < 40; i++) {
+            const sx = ((i * 137 + 50) % canvas.width + distance * 0.02) % canvas.width;
+            const sy = (i * 97) % (h - 60) + 10;
+            ctx.globalAlpha = 0.1 + (i % 4) * 0.08;
+            ctx.fillRect(sx, sy, 1, 1);
+            ctx.fillRect(sx, sy + h, 1, 1);
+        }
+        ctx.globalAlpha = 1;
+    }
+
+    function drawObstacles() {
+        for (const obs of obstacles) {
+            // TOP WORLD obstacles
+            if (obs.topH > 0) {
+                const y = topGroundY() - obs.topH;
+                ctx.fillStyle = '#f472b6';
+                ctx.shadowColor = '#f472b6';
+                ctx.shadowBlur = 10;
+                ctx.fillRect(obs.x, y, OBSTACLE_W, obs.topH);
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = 'rgba(255,255,255,0.1)';
+                ctx.fillRect(obs.x + 3, y + 3, OBSTACLE_W - 6, obs.topH - 6);
+            }
+            if (obs.topCeil > 0) {
+                ctx.fillStyle = '#f472b6';
+                ctx.shadowColor = '#f472b6';
+                ctx.shadowBlur = 10;
+                ctx.fillRect(obs.x, 0, OBSTACLE_W, obs.topCeil);
+                ctx.shadowBlur = 0;
+            }
+
+            // BOTTOM WORLD obstacles (mirrored colors)
+            if (obs.botH > 0) {
+                const y = botGroundY() - obs.botH;
+                ctx.fillStyle = '#818cf8';
+                ctx.shadowColor = '#818cf8';
+                ctx.shadowBlur = 10;
+                ctx.fillRect(obs.x, y, OBSTACLE_W, obs.botH);
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = 'rgba(255,255,255,0.1)';
+                ctx.fillRect(obs.x + 3, y + 3, OBSTACLE_W - 6, obs.botH - 6);
+            }
+            if (obs.botCeil > 0) {
+                ctx.fillStyle = '#818cf8';
+                ctx.shadowColor = '#818cf8';
+                ctx.shadowBlur = 10;
+                ctx.fillRect(obs.x, halfH(), OBSTACLE_W, obs.botCeil);
+                ctx.shadowBlur = 0;
+            }
+        }
+    }
+
+    function drawRunner(runner) {
+        if (!runner.alive) return;
+        const x = runner.x, y = runner.y;
+
+        ctx.shadowColor = runner.color;
+        ctx.shadowBlur = 12;
+
+        // Body square with rounded look
+        ctx.fillStyle = runner.color;
+        ctx.beginPath();
+        ctx.roundRect(x, y, RUNNER_SIZE, RUNNER_SIZE, 6);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Face
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(x + RUNNER_SIZE * 0.65, y + RUNNER_SIZE * 0.35, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#111';
+        ctx.beginPath();
+        ctx.arc(x + RUNNER_SIZE * 0.68, y + RUNNER_SIZE * 0.35, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Bounce animation (squish when on ground)
+        if (runner.onGround) {
+            ctx.fillStyle = runner.color;
+            ctx.fillRect(x + 3, y + RUNNER_SIZE - 3, 5, 3);
+            ctx.fillRect(x + RUNNER_SIZE - 8, y + RUNNER_SIZE - 3, 5, 3);
+        }
+    }
+
+    function drawParticles() {
+        for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            p.x += p.vx; p.y += p.vy; p.vy += 0.08; p.life -= p.decay;
+            if (p.life <= 0) { particles.splice(i, 1); continue; }
+            ctx.globalAlpha = p.life;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+    }
+
+    function drawTutorialText() {
+        ctx.save();
+        if (score < 15) {
+            ctx.fillStyle = 'rgba(244, 114, 182, 0.9)';
+            ctx.font = 'bold 22px Outfit';
+            ctx.textAlign = 'center';
+            ctx.shadowColor = '#f472b6';
+            ctx.shadowBlur = 10;
+            ctx.fillText('🌟 PHASE 1: FOCUS ON THE TOP WORLD (LIGHT) 🌟', canvas.width / 2, topGroundY() - 120);
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.font = '16px Outfit';
+            ctx.fillText('Jump over the pink walls. Bottom world is clear for now.', canvas.width / 2, topGroundY() - 90);
+        } else if (score >= 15 && score < 30) {
+            ctx.fillStyle = 'rgba(129, 140, 248, 0.9)';
+            ctx.font = 'bold 22px Outfit';
+            ctx.textAlign = 'center';
+            ctx.shadowColor = '#818cf8';
+            ctx.shadowBlur = 10;
+            ctx.fillText('🌙 PHASE 2: FOCUS ON THE BOTTOM WORLD (SHADOW) 🌙', canvas.width / 2, botGroundY() - 120);
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.font = '16px Outfit';
+            ctx.fillText('Watch out for the blue walls! Top world is clear now.', canvas.width / 2, botGroundY() - 90);
+        } else if (score >= 30 && score < 50) {
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 22px Outfit';
+            ctx.textAlign = 'center';
+            ctx.shadowColor = '#fff';
+            ctx.shadowBlur = 10;
+            ctx.fillText('👀 PHASE 3: WATCH BOTH WORLDS NOW! 👀', canvas.width / 2, halfH() - 60);
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.font = '16px Outfit';
+            ctx.fillText('Obstacles will alternate between top and bottom.', canvas.width / 2, halfH() - 30);
+        }
+        ctx.restore();
+    }
+
+    // ============ GAME FLOW ============
+    function startGame() {
+        state = 'PLAYING';
+        score = 0;
+        speed = 3.2;
+        distance = 0;
+        obstacles = [];
+        particles = [];
+        resetRunners();
+
+        document.getElementById('menu').classList.add('hidden');
+        document.getElementById('result').classList.add('hidden');
+        document.getElementById('hud').classList.remove('hidden');
+        document.getElementById('divider-label').classList.remove('hidden');
+        document.getElementById('score-display').textContent = '0 m';
+        document.getElementById('speed-display').textContent = '×1.0';
+
+        // Pre-spawn some obstacles (spaced generously at start)
+        for (let i = 0; i < 3; i++) {
+            spawnObstacle();
+            obstacles[obstacles.length - 1].x = canvas.width + 300 + i * 400;
+        }
+    }
+
+    function endGame() {
+        state = 'RESULT';
+        const finalScore = Math.floor(distance / 10);
+        if (finalScore > bestScore) {
+            bestScore = finalScore;
+            try {
+                localStorage.setItem('mirror_run_best', bestScore);
+            } catch (e) {
+                console.warn('Could not save to localStorage:', e);
+            }
+            updateMenuBest();
+        }
+
+        let title = 'CRASH!';
+        if (finalScore > 50) title = 'NOT BAD!';
+        if (finalScore > 150) title = 'IMPRESSIVE! 🔥';
+        if (finalScore > 300) title = 'INSANE!! 🚀';
+
+        document.getElementById('result-title').textContent = title;
+        document.getElementById('result-score').textContent = finalScore + ' m';
+        document.getElementById('result-best').textContent = 'Best: ' + bestScore + ' m';
+        document.getElementById('result').classList.remove('hidden');
+        document.getElementById('hud').classList.add('hidden');
+        document.getElementById('divider-label').classList.add('hidden');
+    }
+
+    // ============ UPDATE ============
+    function update() {
+        if (state !== 'PLAYING') return;
+
+        distance += speed;
+        score = Math.floor(distance / 10);
+        speed += 0.0008; // slower, more manageable speedup
+
+        document.getElementById('score-display').textContent = score + ' m';
+        document.getElementById('speed-display').textContent = '×' + (speed / 3.2).toFixed(1);
+        document.getElementById('best-display').textContent = 'Best: ' + bestScore + ' m';
+
+        // Move obstacles
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+            obstacles[i].x -= speed;
+            if (obstacles[i].x < -OBSTACLE_W - 20) {
+                obstacles.splice(i, 1);
+            }
+        }
+
+        // Spawn new obstacles with dynamic spacing depending on score
+        const lastObs = obstacles[obstacles.length - 1];
+        let minGap = 200;
+        let maxGap = 350;
+        if (score < 15) {
+            minGap = 420; maxGap = 520;
+        } else if (score < 30) {
+            minGap = 420; maxGap = 520;
+        } else if (score < 60) {
+            minGap = 330; maxGap = 420;
+        } else if (score < 100) {
+            minGap = 270; maxGap = 350;
+        } else {
+            minGap = 200; maxGap = 280;
+        }
+        const gap = minGap + Math.random() * (maxGap - minGap);
+        if (!lastObs || lastObs.x < canvas.width - gap) {
+            spawnObstacle();
+        }
+
+        // Update runners
+        updateRunner(topRunner, topGroundY());
+        updateRunner(botRunner, botGroundY());
+
+        // Collisions
+        checkCollisions(topRunner, topGroundY(), true);
+        checkCollisions(botRunner, botGroundY(), false);
+
+        // Game over if either runner dies
+        if (!topRunner.alive || !botRunner.alive) {
+            setTimeout(endGame, 400);
+            state = 'DYING';
+        }
+    }
+
+    // ============ MAIN LOOP ============
+    function gameLoop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        drawWorld();
+
+        if (state === 'PLAYING' || state === 'DYING') {
+            update();
+            drawObstacles();
+            drawRunner(topRunner);
+            drawRunner(botRunner);
+            drawParticles();
+            drawTutorialText();
+        }
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    // ============ INPUT ============
+    document.addEventListener('keydown', e => {
+        if (e.code === 'Space') { e.preventDefault(); jump(); }
+    });
+    canvas.addEventListener('mousedown', jump);
+    canvas.addEventListener('touchstart', e => { e.preventDefault(); jump(); });
+
+    document.getElementById('play-btn').addEventListener('click', e => { e.stopPropagation(); startGame(); });
+    document.getElementById('retry-btn').addEventListener('click', e => { e.stopPropagation(); startGame(); });
+
+    // ============ INIT ============
+    function updateMenuBest() {
+        const menuBest = document.getElementById('menu-best');
+        if (bestScore > 0) {
+            menuBest.textContent = '🏆 Your Record: ' + bestScore + ' m';
+        } else {
+            menuBest.textContent = 'Clear the walls to set a record!';
+        }
+    }
+    updateMenuBest();
+    
+    gameLoop();
+    </script>
+</body>
+</html>
